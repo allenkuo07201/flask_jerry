@@ -1,5 +1,7 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from datetime import datetime
+from crawler.pm25 import get_pm25
+import json
 
 print(__name__)
 
@@ -49,6 +51,37 @@ def stock():
         print(stock["分類"], stock["指數"])
 
     return render_template("stock.html", date=get_today(), stocks=stocks)
+
+# 2023/7/8 start
+
+
+@app.route("/pm25", methods=["GET", "POST"])
+def pm25():
+    # 檢查是否有勾選(GET=>args)
+    if request.method == "POST":
+        sort = request.args.get("sort")
+        print(sort)
+    columns, values = get_pm25()
+    return render_template("pm25.html", columns=columns, values=values)
+
+
+@app.route("/pm25_charts")
+def pm25_charts():
+    return render_template("pm25_charts.html")
+
+@app.route("/pm25_json")
+def get_pm25_json():
+    columns,values = get_pm25()
+    sites = [value[0] for value in values]
+    pm25 = [value[2] for value in values]
+    # 新增要求日期&目前站點數量
+    json_data = {
+        "update":get_today(),
+        "count":len(sites),
+        "sites":sites,
+        "pm25":pm25,
+    }
+
 
 
 if __name__ == "__main__":
